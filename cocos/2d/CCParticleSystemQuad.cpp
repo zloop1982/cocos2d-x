@@ -239,11 +239,7 @@ void ParticleSystemQuad::setDisplayFrame(SpriteFrame *spriteFrame)
     CCASSERT(spriteFrame->getOffsetInPixels().isZero(), 
              "QuadParticle only supports SpriteFrames with no offsets");
 
-    // update texture before updating texture rect
-    if ( !_texture || spriteFrame->getTexture()->getName() != _texture->getName())
-    {
-        this->setTexture(spriteFrame->getTexture());
-    }
+    this->setTextureWithRect(spriteFrame->getTexture(), spriteFrame->getRect());
 }
 
 void ParticleSystemQuad::initIndices()
@@ -603,7 +599,7 @@ void ParticleSystemQuad::setupVBO()
     CHECK_GL_ERROR_DEBUG();
 }
 
-void ParticleSystemQuad::listenRendererRecreated(EventCustom* event)
+void ParticleSystemQuad::listenRendererRecreated(EventCustom* /*event*/)
 {
     //when comes to foreground in android, _buffersVBO and _VAOname is a wild handle
     //before recreating, we need to reset them to 0

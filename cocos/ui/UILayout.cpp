@@ -125,6 +125,18 @@ void Layout::onExit()
         _clippingStencil->onExit();
     }
 }
+    
+void Layout::setGlobalZOrder(float globalZOrder)
+{
+    // _protectedChildren's global z order is set in ProtectedNode::setGlobalZOrder()
+
+    Widget::setGlobalZOrder(globalZOrder);
+    if (_clippingStencil)
+        _clippingStencil->setGlobalZOrder(globalZOrder);
+    
+    for (auto &child : _children)
+        child->setGlobalZOrder(globalZOrder);
+}
 
 Layout* Layout::create()
 {
@@ -166,6 +178,7 @@ void Layout::addChild(Node *child, int zOrder, int tag)
     if (dynamic_cast<Widget*>(child)) {
         supplyTheLayoutParameterLackToChild(static_cast<Widget*>(child));
     }
+    child->setGlobalZOrder(_globalZOrder);
     Widget::addChild(child, zOrder, tag);
     _doLayoutDirty = true;
 }
@@ -175,6 +188,7 @@ void Layout::addChild(Node* child, int zOrder, const std::string &name)
     if (dynamic_cast<Widget*>(child)) {
         supplyTheLayoutParameterLackToChild(static_cast<Widget*>(child));
     }
+    child->setGlobalZOrder(_globalZOrder);
     Widget::addChild(child, zOrder, name);
     _doLayoutDirty = true;
 }
@@ -272,21 +286,21 @@ void Layout::stencilClippingVisit(Renderer *renderer, const Mat4& parentTransfor
     //
     // draw children and protectedChildren zOrder < 0
     //
-    for( ; i < _children.size(); i++ )
+    for(auto size = _children.size(); i < size; i++)
     {
         auto node = _children.at(i);
         
-        if ( node && node->getLocalZOrder() < 0 )
+        if (node && node->getLocalZOrder() < 0)
             node->visit(renderer, _modelViewTransform, flags);
         else
             break;
     }
     
-    for( ; j < _protectedChildren.size(); j++ )
+    for(auto size = _protectedChildren.size(); j < size; j++)
     {
         auto node = _protectedChildren.at(j);
         
-        if ( node && node->getLocalZOrder() < 0 )
+        if (node && node->getLocalZOrder() < 0)
             node->visit(renderer, _modelViewTransform, flags);
         else
             break;
@@ -300,10 +314,10 @@ void Layout::stencilClippingVisit(Renderer *renderer, const Mat4& parentTransfor
     //
     // draw children and protectedChildren zOrder >= 0
     //
-    for(auto it=_protectedChildren.cbegin()+j; it != _protectedChildren.cend(); ++it)
+    for(auto it=_protectedChildren.cbegin()+j, itCend = _protectedChildren.cend(); it != itCend; ++it)
         (*it)->visit(renderer, _modelViewTransform, flags);
     
-    for(auto it=_children.cbegin()+i; it != _children.cend(); ++it)
+    for(auto it=_children.cbegin()+i, itCend = _children.cend(); it != itCend; ++it)
         (*it)->visit(renderer, _modelViewTransform, flags);
 
     
@@ -389,6 +403,7 @@ void Layout::setClippingEnabled(bool able)
             if (able)
             {
                 _clippingStencil = DrawNode::create();
+                _clippingStencil->setGlobalZOrder(_globalZOrder);
                 if (_running)
                 {
                     _clippingStencil->onEnter();
@@ -428,7 +443,7 @@ Layout::ClippingType Layout::getClippingType()const
     return _clippingType;
 }
     
-void Layout::setStencilClippingSize(const Size &size)
+void Layout::setStencilClippingSize(const Size& /*size*/)
 {
     if (_clippingEnabled && _clippingType == ClippingType::STENCIL)
     {
